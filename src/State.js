@@ -40,14 +40,14 @@ export function getInitialState(
   const { key, style, type, ...parentProps } = props;
   if (!route.children) {
     return {
-      ...scenes.rootProps,
+      ...scenes.rootProps, ...parentProps,
+      ...getStateFromScenes(route, scenes, props),
       ...route,
       key: `${position}_${route.sceneKey}`,
-      ...parentProps,
-      ...getStateFromScenes(route, scenes, props),
     };
   }
-  const res = { ...route, ...scenes.rootProps, ...parentProps };
+  const res = { sceneKey: route.sceneKey, route: { ...route, ...scenes.rootProps, ...parentProps },
+    parent: route.parent };
   let index = 0;
   route.children.forEach((r, i) => {
     assert(scenes[r], `Empty scene for key=${route.key}`);
@@ -57,20 +57,20 @@ export function getInitialState(
   });
 
   if (route.tabs) {
-    res.children = route.children.map((r, i) => getInitialState(scenes[r], scenes, i, props));
+    res.routes = route.children.map((r, i) => getInitialState(scenes[r], scenes, i, props));
     res.index = index;
   } else {
-    res.children = [getInitialState(scenes[route.children[index]], scenes, 0, props)];
+    res.routes = [getInitialState(scenes[route.children[index]], scenes, 0, props)];
     res.index = 0;
   }
-  res.key = `${position}_${res.key}`;
+  res.key = `${position}_${res.route.key}`;
   return res;
 }
 
 export default function (scenes:{string: any}) {
   // find "root" component and get state from it
   const rootRoute = Object.keys(scenes).find((route) =>
-    scenes.hasOwnProperty(route) && !scenes[route].parent);
+  scenes.hasOwnProperty(route) && !scenes[route].parent);
 
   return getInitialState(scenes[rootRoute], scenes);
 }

@@ -12,14 +12,14 @@ import React, {
 } from 'react';
 import NavigationExperimental from 'react-native-experimental-navigation';
 
-import Actions from './Actions';
+import Actions, {POP_ACTION} from './Actions';
 import getInitialState from './State';
 import Reducer from './Reducer';
 import DefaultRenderer from './DefaultRenderer';
 import Scene from './Scene';
 
 const {
-  RootContainer: NavigationRootContainer,
+  CardStack,
 } = NavigationExperimental;
 
 const propTypes = {
@@ -31,8 +31,9 @@ class Router extends Component {
   constructor(props) {
     super(props);
     this.state = {};
-    this.renderNavigation = this.renderNavigation.bind(this);
+    this.routerReducer = null;
     this.handleProps = this.handleProps.bind(this);
+    this.onPopRoute = this.onPopRoute.bind(this);
   }
 
   componentDidMount() {
@@ -70,38 +71,43 @@ class Router extends Component {
 
     scenesMap.rootProps = parentProps;
 
-    const initialState = getInitialState(scenesMap);
-    const reducerCreator = props.createReducer || Reducer;
+    const navigationState = props.navigationState || getInitialState(scenesMap);
 
-    const routerReducer = props.reducer || (
-      reducerCreator({
-        initialState,
-        scenes: scenesMap,
-      }));
-
-    this.setState({ reducer: routerReducer });
-  }
-
-  renderNavigation(navigationState, onNavigate) {
-    if (!navigationState) {
-      return null;
+    if (!props.navigationState) {
+      const reducerCreator = createReducer || Reducer;
+      this.routerReducer = reducer || (
+          reducerCreator({
+            initialState: navigationState,
+            scenes: scenesMap,
+          }));
     }
 
-    Actions.callback = props => {
-      if (this.props.dispatch) this.props.dispatch(props);
-      return onNavigate(props);
-    };
+    this.setState({ navigationState });
 
-    return <DefaultRenderer onNavigate={onNavigate} navigationState={navigationState} />;
+    Actions.callback = action => {
+      if (this.props.dispatch) this.props.dispatch(action);
+      const newState = this.routerReducer(this.state.navigationState, action);
+      if (newState !== this.state.navigationState) {
+        this.setState({ navigationState: newState });
+        return true;
+      }
+      return false;
+    };
+  }
+
+  onPopRoute() {
+    Actions.callback({ type: POP_ACTION });
   }
 
   render() {
-    if (!this.state.reducer) return null;
+    console.log("NEW STATE", this.state.navigationState);
+    if (!this.state.navigationState) return null;
 
     return (
-      <NavigationRootContainer
-        reducer={this.state.reducer}
-        renderNavigation={this.renderNavigation}
+      <DefaultRenderer
+        onNavigate={this.onPopRoute}
+        navigationState={this.state.navigationState}
+        style={this.props.style}
       />
     );
   }

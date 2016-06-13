@@ -41,18 +41,18 @@ function inject(state, action, props, scenes) {
   state.sceneKey === action.key : state.sceneKey === props.parent;
   // console.log("INJECT:", action.key, state.sceneKey, condition);
   if (!condition) {
-    if (state.children) {
-      const res = state.children.map(el => inject(el, action, props, scenes));
+    if (state.routes) {
+      const res = state.routes.map(el => inject(el, action, props, scenes));
       let changed = false;
       let changedIndex = -1;
       for (let i = 0; i < res.length; i++) {
-        if (res[i] !== state.children[i]) {
+        if (res[i] !== state.routes[i]) {
           changed = true;
           changedIndex = i;
           break;
         }
       }
-      return changed ? { ...state, children: res, index: changedIndex } : state;
+      return changed ? { ...state, routes: res, index: changedIndex } : state;
     }
     return state;
   }
@@ -65,7 +65,7 @@ function inject(state, action, props, scenes) {
       return {
         ...state,
         index: targetIndex,
-        children: state.children.slice(0, (targetIndex + 1)),
+        routes: state.routes.slice(0, (targetIndex + 1)),
       };
     }
 
@@ -79,8 +79,8 @@ function inject(state, action, props, scenes) {
       return {
         ...state,
         index: state.index - 1,
-        from: state.children[state.children.length - 1],
-        children: state.children.slice(0, - 1),
+        from: state.routes[state.routes.length - 1],
+        routes: state.routes.slice(0, - 1),
       };
     case REFRESH_ACTION:
       return props.base ?
@@ -95,48 +95,48 @@ function inject(state, action, props, scenes) {
         from: null,
       };
     case PUSH_ACTION:
-      if (state.children[state.index].sceneKey === action.key && !props.clone
-        && checkPropertiesEqual(action, state.children[state.index])) {
+      if (state.routes[state.index].sceneKey === action.key && !props.clone
+        && checkPropertiesEqual(action, state.routes[state.index])) {
         return state;
       }
       return {
         ...state,
         index: state.index + 1,
         from: null,
-        children: [...state.children, getInitialState(props, scenes, state.index + 1, action)],
+        routes: [...state.routes, getInitialState(props, scenes, state.index + 1, action)],
       };
     case JUMP_ACTION:
       assert(state.tabs, `Parent=${state.key} is not tab bar, jump action is not valid`);
       ind = -1;
-      state.children.forEach((c, i) => { if (c.sceneKey === action.key) { ind = i; } });
+      state.routes.forEach((c, i) => { if (c.sceneKey === action.key) { ind = i; } });
       assert(ind !== -1, `Cannot find route with key=${action.key} for parent=${state.key}`);
       return { ...state, index: ind };
     case REPLACE_ACTION:
-      if (state.children[state.index].sceneKey === action.key) {
+      if (state.routes[state.index].sceneKey === action.key) {
         return state;
       }
 
-      state.children[state.children.length - 1] = getInitialState(
+      state.routes[state.routes.length - 1] = getInitialState(
         props,
         scenes,
         state.index,
         action
       );
 
-      return { ...state, children: state.children };
+      return { ...state, routes: state.routes };
     case RESET_ACTION:
-      if (state.children[state.index].sceneKey === action.key) {
+      if (state.routes[state.index].sceneKey === action.key) {
         return state;
       }
 
-      state.children = state.children.splice(0, 1);
-      state.children[0] = getInitialState(props, scenes, state.index, action);
+      state.routes = state.routes.splice(0, 1);
+      state.routes[0] = getInitialState(props, scenes, state.index, action);
 
       return {
         ...state,
         index: 0,
         from: null,
-        children: state.children,
+        routes: state.routes,
       };
     default:
       return state;
@@ -147,8 +147,8 @@ function findElement(state, key, type) {
   if ((type === REFRESH_ACTION && state.key === key) || state.sceneKey === key) {
     return state;
   }
-  if (state.children) {
-    for (const child of state.children) {
+  if (state.routes) {
+    for (const child of state.routes) {
       const current = findElement(child, key, type);
       if (current) return current;
     }
@@ -157,17 +157,17 @@ function findElement(state, key, type) {
 }
 
 function getCurrent(state) {
-  if (!state.children) {
+  if (!state.routes) {
     return state;
   }
-  return getCurrent(state.children[state.index]);
+  return getCurrent(state.routes[state.index]);
 }
 
-function update(state, action) {
+function update(state, action, scenes) {
   // find parent in the state
-  const props = { ...state.scenes[action.key], ...action };
+  const props = { ...scenes[action.key], ...action };
   assert(props.parent, `No parent is defined for route=${action.key}`);
-  return inject(state, action, props, state.scenes);
+  return inject(state, action, props, scenes);
 }
 
 function reducer({ initialState, scenes }) {
@@ -177,21 +177,20 @@ function reducer({ initialState, scenes }) {
   return (stateParam, actionParam) => {
     let state = stateParam;
     let action = actionParam;
-    state = state || { ...initialState, scenes };
+    state = state || initialState ;
     assert(action, 'action should be defined');
     assert(action.type, 'action type should be defined');
-    assert(state.scenes, 'state.scenes is missed');
 
     if (action.key) {
       if (action.type === REFRESH_ACTION) {
         let key = action.key;
-        let child = findElement(state, key, action.type) || state.scenes[key];
+        let child = findElement(state, key, action.type) || scenes[key];
         let sceneKey = child.sceneKey;
         if (child.base) {
-          child = { ...state.scenes[child.base], ...child };
-          assert(state.scenes[child.base], `No scene exists for base=${child.base}`);
-          key = state.scenes[child.base].key;
-          sceneKey = state.scenes[child.base].sceneKey;
+          child = { ...scenes[child.base], ...child };
+          assert(scenes[child.base], `No scene exists for base=${child.base}`);
+          key = scenes[child.base].key;
+          sceneKey = scenes[child.base].sceneKey;
         }
         assert(child, `missed child data for key=${key}`);
         // evaluate functions within actions to allow conditional set, like switch values
@@ -206,7 +205,7 @@ function reducer({ initialState, scenes }) {
 
         // console.log("REFRESH ACTION:", action);
       } else {
-        const scene = state.scenes[action.key];
+        const scene = scenes[action.key];
         assert(scene, `missed route data for key=${action.key}`);
         // clone scene
         if (scene.clone) {
@@ -235,12 +234,12 @@ function reducer({ initialState, scenes }) {
         let targetIndex = 0;
 
         // target is child of a node
-        if (!targetEl.children) {
+        if (!targetEl.routes) {
           const targetParent = findElement(state, targetEl.parent, action.type);
           assert(targetParent, `Cannot find parent for target ${target}`);
           parent = targetParent.sceneKey;
 
-          targetIndex = targetParent.children.indexOf(targetEl);
+          targetIndex = targetParent.routes.indexOf(targetEl);
           assert(targetIndex > -1, `${target} does not belong to ${targetParent.sceneKey}`);
         }
 
@@ -250,9 +249,9 @@ function reducer({ initialState, scenes }) {
 
       // recursive pop parent
       if (action.type === POP_ACTION || action.type === POP_ACTION2) {
-        const parent = action.parent || state.scenes[action.key].parent;
+        const parent = action.parent || scenes[action.key].parent;
         let el = findElement(state, parent, action.type);
-        while (el.parent && (el.children.length <= 1 || el.tabs)) {
+        while (el.parent && (el.routes.length <= 1 || el.tabs)) {
           el = findElement(state, el.parent, action.type);
           assert(el, `Cannot find element for parent=${el.parent} within current state`);
         }
@@ -269,7 +268,7 @@ function reducer({ initialState, scenes }) {
       case JUMP_ACTION:
       case REPLACE_ACTION:
       case RESET_ACTION:
-        return update(state, action);
+        return update(state, action, scenes);
 
       default:
         return state;
