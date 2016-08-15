@@ -304,9 +304,6 @@ export default class DefaultRenderer extends Component {
               }
             }
           } }
-          onEnd={(ani) => setTimeout(() => {
-            ani.clear()
-          }, 300) }
           style={[style, { backgroundColor: 'transparent' }]}>
           <NavigationCard
             {...props}
