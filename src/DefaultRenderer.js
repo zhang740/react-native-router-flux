@@ -23,8 +23,10 @@ import Actions from './Actions';
 import { deepestExplicitValueForKey } from './Util';
 import NavigationExperimental from 'react-native-experimental-navigation';
 import PureRenderMixin from 'react-addons-pure-render-mixin';
+import {AnimationView, AnimationModel} from 'react-native-animation'
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const {
   AnimatedView: NavigationAnimatedView,
@@ -43,6 +45,7 @@ const styles = StyleSheet.create({
   },
   sceneStyle: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
 });
 
@@ -99,6 +102,8 @@ function leftToRight(/* NavigationSceneRendererProps */ props) {
   };
 }
 
+const AnimationDatas = {}
+
 export default class DefaultRenderer extends Component {
 
   static propTypes = {
@@ -135,6 +140,25 @@ export default class DefaultRenderer extends Component {
     }
   }
 
+  componentDidUpdate() {
+    let state = this.props.navigationState
+    let animation = {}
+    if (state && state.from && AnimationDatas[state.index + 1]) {
+      animation = AnimationDatas[state.index + 1] || {}
+      animation.view && animation.view.add(animation.out)
+      animation.view && animation.view.start()
+    } else if (state.index !== 0) {
+      animation = AnimationDatas[state.index] || {}
+      animation.view && animation.view.add(animation.in)
+      animation.view && animation.view.start()
+
+      animation = AnimationDatas[state.index - 1] || {}
+      animation.view && animation.view.add(animation.overIn)
+      animation.view && animation.view.start()
+      animation.isDisplay = false
+    }
+  }
+
   getPanHandlers(direction, props) {
     return direction === 'vertical' ?
       NavigationCardStackPanResponder.forVertical(props) :
@@ -150,16 +174,78 @@ export default class DefaultRenderer extends Component {
   }
 
   chooseInterpolator(direction, props) {
+    if (!AnimationDatas[props.navigationState.index]) {
+      AnimationDatas[props.navigationState.index] = {}
+    }
+    const data = AnimationDatas[props.navigationState.index]
     switch (direction) {
       case 'vertical':
-        return NavigationCardStackStyleInterpolator.forVertical(props);
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 0,
+          }, {
+              type: 'Translate',
+              from2: SCREEN_HEIGHT,
+              to2: 0,
+              duration: 200,
+            }],
+        })
+      // return NavigationCardStackStyleInterpolator.forVertical(props);
       case 'fade':
-        return fadeInScene(props);
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [
+            {
+              type: 'Alpha',
+              from: 0,
+              to: 1,
+              duration: 200,
+            },
+          ],
+        })
+      // return fadeInScene(props);
       case 'leftToRight':
-        return leftToRight(props);
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 0,
+          }, {
+              type: 'Translate',
+              from: 0,
+              to: SCREEN_WIDTH,
+              duration: 200,
+            }],
+        })
+      // return leftToRight(props);
       default:
-        return NavigationCardStackStyleInterpolator.forHorizontal(props);
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 0,
+          }, {
+              type: 'Translate',
+              from: SCREEN_WIDTH,
+              to: 0,
+              duration: 200,
+            }],
+          out: [{
+            type: 'Translate',
+            from: 0,
+            to: SCREEN_WIDTH,
+            duration: 200,
+          }],
+          overIn: [],
+          overOut: []
+        })
+      // return NavigationCardStackStyleInterpolator.forHorizontal(props);
     }
+    return {}
   }
 
   renderCard(/* NavigationSceneRendererProps */ props) {
@@ -189,25 +275,47 @@ export default class DefaultRenderer extends Component {
     // direction overrides animation if both are supplied
     const animType = (animation && !direction) ? animation : direction;
 
-    if (typeof(animationStyle) === 'undefined') {
+    if (typeof (animationStyle) === 'undefined') {
       animationStyle = this.chooseInterpolator(animType, props);
     }
 
-    if (typeof(animationStyle) === 'function') {
+    if (typeof (animationStyle) === 'function') {
       animationStyle = animationStyle(props);
     }
 
-    if (typeof(panHandlers) === 'undefined') {
+    if (typeof (panHandlers) === 'undefined') {
       panHandlers = getPanHandlers ? getPanHandlers(props) : this.getPanHandlers(direction, props);
     }
+
+    let nowIndex = props.navigationState.index
+    // console.log('render card', `card_${key}`)
     return (
-      <NavigationCard
-        {...props}
-        key={`card_${key}`}
-        style={[animationStyle, style]}
-        panHandlers={panHandlers}
-        renderScene={this.renderScene}
-      />
+      <View key={`card_${key}`}
+        style={[style, { backgroundColor: 'transparent' }]}>
+        <AnimationView
+          data={[]}
+          ref={(ani) => {
+            if (ani != undefined) {
+              AnimationDatas[nowIndex].view = ani
+              if (!AnimationDatas[nowIndex].isDisplay) {
+                AnimationDatas[nowIndex].isDisplay = true
+                ani.add(AnimationDatas[nowIndex].overOut)
+                ani.start()
+              }
+            }
+          } }
+          onEnd={(ani) => setTimeout(() => {
+            ani.clear()
+          }, 300) }
+          style={[style, { backgroundColor: 'transparent' }]}>
+          <NavigationCard
+            {...props}
+            style={[style, { height: SCREEN_HEIGHT, backgroundColor: 'transparent' }]}
+            panHandlers={panHandlers}
+            renderScene={this.renderScene}
+            />
+        </AnimationView >
+      </View>
     );
   }
 
@@ -217,7 +325,7 @@ export default class DefaultRenderer extends Component {
         key={props.scene.navigationState.key}
         onNavigate={props.onNavigate}
         navigationState={props.scene.navigationState}
-      />
+        />
     );
   }
 
