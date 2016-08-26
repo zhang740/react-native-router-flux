@@ -201,7 +201,7 @@ declare namespace RNRF {
     /**
      * optional wrappert
      */
-    wrapBy?: ()=>any,
+    wrapBy?: () => any,
   }
 
   /**
@@ -256,13 +256,15 @@ declare namespace RNRF {
     rightButtonImage?: ReactNative.Image,
     rightButtonIconStyle?: ReactNative.ViewStyle,
     rightButtonStyle?: ReactNative.ViewStyle,
-    rightButtonTextStyle?: ReactNative.TextStyle
+    rightButtonTextStyle?: ReactNative.TextStyle,
+
+    onNavigate: (navigationState: any)
   }
   export class Router extends React.Component<RouterProps, {}>{ }
 
 
   // Actions
-   type props = Object;
+  type props = Object;
 
   interface RNRFActions {
     pop(props?: props): void,
@@ -273,7 +275,7 @@ declare namespace RNRF {
   }
 
   export var Actions: RNRFActions;
-  
+
   // ActionsConst
   interface RNRFActionConst {
     JUMP: string,
