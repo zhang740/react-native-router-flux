@@ -298,35 +298,40 @@ export default class DefaultRenderer extends Component {
     }
     // console.log('render card', `card_${key}`)
     return (
-      <View key={`card_${key}`}
-        style={[style, { backgroundColor: 'transparent' }]}>
-        <AnimationView
-          data={[]}
-          ref={(ani) => {
-            if (ani != undefined && AnimationDatas[nowIndex]) {
-              AnimationDatas[nowIndex].view = ani
-              // console.warn(topIndex, !!AnimationDatas[topIndex])
-              if (topIndex > 0 && AnimationDatas[topIndex]) {
-                AnimationDatas[topIndex].isDisplay = true
-                ani.add(AnimationDatas[topIndex].overOut)
-                ani.start()
-              }
+      <AnimationView key={`card_${key}`}
+        data={[]}
+        ref={(ani) => {
+          if (ani != undefined && AnimationDatas[nowIndex]) {
+            AnimationDatas[nowIndex].view = ani
+            // console.warn(topIndex, !!AnimationDatas[topIndex])
+            if (topIndex > 0 && AnimationDatas[topIndex]) {
+              AnimationDatas[topIndex].isDisplay = true
+              ani.add(AnimationDatas[topIndex].overOut)
+              ani.start()
             }
-          } }
-          style={[style, {
-            opacity: nowIndex > 0 && nowIndex == topIndex ? 0 : 1,
-            backgroundColor: 'transparent'
-          }]}>
-          <NavigationCard
-            {...props}
-            style={[style, {
-              height: SCREEN_HEIGHT, backgroundColor: 'transparent'
-            }]}
-            panHandlers={panHandlers}
-            renderScene={this.renderScene}
-            />
-        </AnimationView >
-      </View>
+          }
+        } }
+        style={[style, {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: SCREEN_WIDTH,
+          height: SCREEN_HEIGHT,
+          justifyContent: 'flex-start',
+          opacity: nowIndex > 0 && nowIndex == topIndex ? 1 : 1,
+          backgroundColor: 'green'
+        }]}>
+        <NavigationCard
+          {...props}
+          style={[{
+            width: SCREEN_WIDTH,
+            height: SCREEN_HEIGHT,
+            backgroundColor: 'red'
+          }]}
+          panHandlers={panHandlers}
+          renderScene={this.renderScene}
+          />
+      </AnimationView >
     );
   }
 
