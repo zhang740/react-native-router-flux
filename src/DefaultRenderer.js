@@ -318,15 +318,15 @@ export default class DefaultRenderer extends Component {
           width: SCREEN_WIDTH,
           height: SCREEN_HEIGHT,
           justifyContent: 'flex-start',
-          opacity: nowIndex > 0 && nowIndex == topIndex ? 1 : 1,
-          backgroundColor: 'green'
+          opacity: nowIndex > 0 && nowIndex == topIndex ? 0 : 1,
+          backgroundColor: 'transparent'
         }]}>
         <NavigationCard
           {...props}
           style={[{
             width: SCREEN_WIDTH,
             height: SCREEN_HEIGHT,
-            backgroundColor: 'red'
+            backgroundColor: 'transparent'
           }]}
           panHandlers={panHandlers}
           renderScene={this.renderScene}
