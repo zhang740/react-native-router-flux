@@ -259,6 +259,7 @@ declare namespace RNRF {
     rightButtonTextStyle?: ReactNative.TextStyle,
 
     onNavigate: (navigationState: any) => void
+    onExitApp: () => void
   }
   export class Router extends React.Component<RouterProps, {}>{ }
 
