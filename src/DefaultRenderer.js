@@ -182,7 +182,6 @@ export default class DefaultRenderer extends Component {
       AnimationDatas[props.navigationState.index] = {}
     }
     const data = AnimationDatas[props.navigationState.index]
-    console.warn('direction', direction)
     switch (direction) {
       case 'vertical':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
