@@ -23,7 +23,7 @@ import Actions from './Actions';
 import { deepestExplicitValueForKey } from './Util';
 import NavigationExperimental from 'react-native-experimental-navigation';
 import PureRenderMixin from 'react-addons-pure-render-mixin';
-import {AnimationView, AnimationModel} from 'react-native-animation'
+import { AnimationView, AnimationModel } from 'react-native-animation'
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -182,6 +182,7 @@ export default class DefaultRenderer extends Component {
       AnimationDatas[props.navigationState.index] = {}
     }
     const data = AnimationDatas[props.navigationState.index]
+    console.warn('direction', direction)
     switch (direction) {
       case 'vertical':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
@@ -191,12 +192,13 @@ export default class DefaultRenderer extends Component {
             to: 1,
             duration: 0,
           }, {
-              type: 'Translate',
-              from2: SCREEN_HEIGHT,
-              to2: 0,
-              duration: 200,
-            }],
+            type: 'Translate',
+            from2: SCREEN_HEIGHT,
+            to2: 0,
+            duration: 200,
+          }],
         })
+        break
       // return NavigationCardStackStyleInterpolator.forVertical(props);
       case 'fade':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
@@ -209,6 +211,7 @@ export default class DefaultRenderer extends Component {
             },
           ],
         })
+        break
       // return fadeInScene(props);
       case 'leftToRight':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
@@ -218,12 +221,13 @@ export default class DefaultRenderer extends Component {
             to: 1,
             duration: 0,
           }, {
-              type: 'Translate',
-              from: 0,
-              to: SCREEN_WIDTH,
-              duration: 200,
-            }],
+            type: 'Translate',
+            from: 0,
+            to: SCREEN_WIDTH,
+            duration: 200,
+          }],
         })
+        break
       // return leftToRight(props);
       default:
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
@@ -233,11 +237,11 @@ export default class DefaultRenderer extends Component {
             to: 1,
             duration: 0,
           }, {
-              type: 'Translate',
-              from: SCREEN_WIDTH,
-              to: 0,
-              duration: 200,
-            }],
+            type: 'Translate',
+            from: SCREEN_WIDTH,
+            to: 0,
+            duration: 200,
+          }],
           out: [{
             type: 'Translate',
             from: 0,
