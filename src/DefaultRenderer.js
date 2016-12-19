@@ -196,6 +196,12 @@ export default class DefaultRenderer extends Component {
             to2: 0,
             duration: 200,
           }],
+          out: [{
+            type: 'Translate',
+            from2: 0,
+            to2: SCREEN_HEIGHT,
+            duration: 200,
+          }],
         })
         break
       // return NavigationCardStackStyleInterpolator.forVertical(props);
@@ -223,6 +229,12 @@ export default class DefaultRenderer extends Component {
             type: 'Translate',
             from: 0,
             to: SCREEN_WIDTH,
+            duration: 200,
+          }],
+          out: [{
+            type: 'Translate',
+            from: SCREEN_WIDTH,
+            to: 0,
             duration: 200,
           }],
         })
@@ -369,99 +381,99 @@ export default class DefaultRenderer extends Component {
 
     if (selected.component && selected.component.renderNavigationBar) {
       return selected.component.renderNavigationBar({ ...props, ...selected });
+    }
+
+    const HeaderComponent = selected.navBar || child.navBar || state.navBar || NavBar;
+    const navBarProps = { ...state, ...child, ...selected };
+
+    if (selected.component && selected.component.onRight) {
+      navBarProps.onRight = selected.component.onRight;
+    }
+
+    if (selected.component && selected.component.onLeft) {
+      navBarProps.onLeft = selected.component.onLeft;
+    }
+
+    if ((navBarProps.leftTitle || navBarProps.leftButtonImage) && navBarProps.onLeft) {
+      delete navBarProps.leftButton;
+    }
+
+    if ((navBarProps.rightTitle || navBarProps.rightButtonImage) && navBarProps.onRight) {
+      delete navBarProps.rightButton;
+    }
+
+    if (navBarProps.rightButton) {
+      delete navBarProps.rightTitle;
+      delete navBarProps.onRight;
+      delete navBarProps.rightButtonImage;
+    }
+
+    if (navBarProps.leftButton) {
+      delete navBarProps.leftTitle;
+      delete navBarProps.onLeft;
+      delete navBarProps.leftButtonImage;
+    }
+    delete navBarProps.style;
+
+    const getTitle = selected.getTitle || (opts => opts.title);
+    return <HeaderComponent {...props} {...navBarProps} getTitle={getTitle} />;
   }
 
-  const HeaderComponent = selected.navBar || child.navBar || state.navBar || NavBar;
-  const navBarProps = { ...state, ...child, ...selected };
+  render() {
+    const { navigationState, onNavigate } = this.props;
 
-  if(selected.component && selected.component.onRight) {
-    navBarProps.onRight = selected.component.onRight;
-  }
+    if (!navigationState || !onNavigate) {
+      console.error('navigationState and onNavigate property should be not null');
+      return null;
+    }
 
-  if(selected.component && selected.component.onLeft) {
-    navBarProps.onLeft = selected.component.onLeft;
-  }
+    let SceneComponent = navigationState.component;
 
-  if((navBarProps.leftTitle || navBarProps.leftButtonImage) && navBarProps.onLeft) {
-  delete navBarProps.leftButton;
-}
+    if (navigationState.tabs && !SceneComponent) {
+      SceneComponent = TabBar;
+    }
 
-if ((navBarProps.rightTitle || navBarProps.rightButtonImage) && navBarProps.onRight) {
-  delete navBarProps.rightButton;
-}
+    if (SceneComponent) {
+      return (
+        <View
+          style={[styles.sceneStyle, navigationState.sceneStyle]}
+          >
+          <SceneComponent {...this.props} {...navigationState} />
+        </View>
+      );
+    }
 
-if (navBarProps.rightButton) {
-  delete navBarProps.rightTitle;
-  delete navBarProps.onRight;
-  delete navBarProps.rightButtonImage;
-}
+    const optionals = {};
+    const selected = navigationState.children[navigationState.index];
+    const applyAnimation = selected.applyAnimation || navigationState.applyAnimation;
+    const style = selected.style || navigationState.style;
 
-if (navBarProps.leftButton) {
-  delete navBarProps.leftTitle;
-  delete navBarProps.onLeft;
-  delete navBarProps.leftButtonImage;
-}
-delete navBarProps.style;
+    if (applyAnimation) {
+      optionals.applyAnimation = applyAnimation;
+    } else {
+      let duration = selected.duration;
+      if (duration === null || duration === undefined) duration = navigationState.duration;
+      if (duration !== null && duration !== undefined) {
+        optionals.applyAnimation = (pos, navState) => {
+          if (duration === 0) {
+            pos.setValue(navState.index);
+          } else {
+            Animated.timing(pos, { toValue: navState.index, duration }).start();
+          }
+        };
+      }
+    }
 
-const getTitle = selected.getTitle || (opts => opts.title);
-return <HeaderComponent {...props} {...navBarProps} getTitle={getTitle} />;
-  }
+    // console.log(`NavigationAnimatedView for ${navigationState.key}`);
 
-render() {
-  const { navigationState, onNavigate } = this.props;
-
-  if (!navigationState || !onNavigate) {
-    console.error('navigationState and onNavigate property should be not null');
-    return null;
-  }
-
-  let SceneComponent = navigationState.component;
-
-  if (navigationState.tabs && !SceneComponent) {
-    SceneComponent = TabBar;
-  }
-
-  if (SceneComponent) {
     return (
-      <View
-        style={[styles.sceneStyle, navigationState.sceneStyle]}
-        >
-        <SceneComponent {...this.props} {...navigationState} />
-      </View>
+      <NavigationAnimatedView
+        navigationState={navigationState}
+        style={[styles.animatedView, style]}
+        renderOverlay={this.renderHeader}
+        renderScene={this.renderCard}
+        {...optionals}
+        />
     );
   }
-
-  const optionals = {};
-  const selected = navigationState.children[navigationState.index];
-  const applyAnimation = selected.applyAnimation || navigationState.applyAnimation;
-  const style = selected.style || navigationState.style;
-
-  if (applyAnimation) {
-    optionals.applyAnimation = applyAnimation;
-  } else {
-    let duration = selected.duration;
-    if (duration === null || duration === undefined) duration = navigationState.duration;
-    if (duration !== null && duration !== undefined) {
-      optionals.applyAnimation = (pos, navState) => {
-        if (duration === 0) {
-          pos.setValue(navState.index);
-        } else {
-          Animated.timing(pos, { toValue: navState.index, duration }).start();
-        }
-      };
-    }
-  }
-
-  // console.log(`NavigationAnimatedView for ${navigationState.key}`);
-
-  return (
-    <NavigationAnimatedView
-      navigationState={navigationState}
-      style={[styles.animatedView, style]}
-      renderOverlay={this.renderHeader}
-      renderScene={this.renderCard}
-      {...optionals}
-      />
-  );
-}
 }
