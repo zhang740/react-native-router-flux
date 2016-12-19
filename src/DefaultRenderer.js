@@ -183,6 +183,43 @@ export default class DefaultRenderer extends Component {
     }
     const data = AnimationDatas[props.navigationState.index]
     switch (direction) {
+      case 'fadeInVerticalOut':
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 0,
+          }],
+          out: [{
+            type: 'Alpha',
+            from: 1,
+            to: 0,
+            duration: 0,
+          }, {
+            type: 'Translate',
+            from2: 0,
+            to2: SCREEN_HEIGHT,
+            duration: 200,
+          }],
+        })
+        break
+      case 'fadeInRightOut':
+        AnimationDatas[props.navigationState.index] = Object.assign(data, {
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 0,
+          }],
+          out: [{
+            type: 'Translate',
+            from: 0,
+            to: SCREEN_WIDTH,
+            duration: 200,
+          }],
+        })
+        break
       case 'vertical':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
           in: [{
@@ -207,14 +244,18 @@ export default class DefaultRenderer extends Component {
       // return NavigationCardStackStyleInterpolator.forVertical(props);
       case 'fade':
         AnimationDatas[props.navigationState.index] = Object.assign(data, {
-          in: [
-            {
-              type: 'Alpha',
-              from: 0,
-              to: 1,
-              duration: 200,
-            },
-          ],
+          in: [{
+            type: 'Alpha',
+            from: 0,
+            to: 1,
+            duration: 200,
+          },],
+          out: [{
+            type: 'Alpha',
+            from: 1,
+            to: 0,
+            duration: 200,
+          }],
         })
         break
       // return fadeInScene(props);
